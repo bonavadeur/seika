@@ -1,0 +1,31 @@
+# permissions for end users to edit seikas.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: seika-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: seika
+    app.kubernetes.io/part-of: seika
+    app.kubernetes.io/managed-by: kustomize
+  name: seika-editor-role
+rules:
+- apiGroups:
+  - batch.bonavadeur.io
+  resources:
+  - seikas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.bonavadeur.io
+  resources:
+  - seikas/status
+  verbs:
+  - get

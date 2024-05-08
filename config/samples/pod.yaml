@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shuka
+  labels:
+    bonavadeur.io/seika: shuka
+    bonavadeur.io/seika-node: node1
+spec:
+  containers:
+  - name: shuka
+    image: docker.io/bonavadeur/shuka:sleep

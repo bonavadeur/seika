@@ -1,0 +1,23 @@
+apiVersion: batch.bonavadeur.io/v1
+kind: Seika
+metadata:
+  labels:
+    app.kubernetes.io/name: seika
+    app.kubernetes.io/instance: seika-sample
+    app.kubernetes.io/part-of: seika
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: seika
+  name: seika-sample
+spec:
+  repurika:
+    node1: 1
+    node2: 2
+    node3: 3
+  selector:
+    matchLabels:
+      bonavadeur.io/seika: seika-sample
+  template:
+    spec:
+      containers:
+      - name: shuka
+        image: docker.io/bonavadeur/shuka:sleep
