@@ -11,12 +11,17 @@ metadata:
 spec:
   repurika:
     node1: 1
-    node2: 2
-    node3: 3
+    node2: 0
+    node3: 2
   selector:
     matchLabels:
       bonavadeur.io/seika: seika-sample
   template:
+    metadata:
+      labels:
+        example/label: something-label
+      annotations:
+        example/annotation: something-annotation
     spec:
       containers:
       - name: shuka

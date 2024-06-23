@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: docker.io/bonavadeur/seika
-  newTag: latest
+  newTag: v1.1

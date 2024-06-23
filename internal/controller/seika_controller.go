@@ -160,10 +160,18 @@ func generatePodName() string {
 
 func (r *SeikaReconciler) createPodTemplate(seika *batchv1.Seika, node string) (*corev1.Pod, error) {
 	labels := map[string]string{}
+	annotations := map[string]string{}
 	for k, v := range seika.Spec.Selector.MatchLabels {
 		labels[k] = v
 	}
+	for k, v := range seika.Spec.Template.Labels {
+		labels[k] = v
+	}
 	labels["bonavadeur.io/seika-hostname"] = node
+
+	for k, v := range seika.Spec.Template.Annotations {
+		annotations[k] = v
+	}
 
 	spec := seika.Spec.Template.Spec
 	spec.NodeSelector = map[string]string{
@@ -172,9 +180,10 @@ func (r *SeikaReconciler) createPodTemplate(seika *batchv1.Seika, node string) (
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v-%v", seika.Name, node, generatePodName()),
-			Namespace: seika.Namespace,
-			Labels:    labels,
+			Name:        fmt.Sprintf("%v-%v-%v", seika.Name, node, generatePodName()),
+			Namespace:   seika.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: spec,
 	}
