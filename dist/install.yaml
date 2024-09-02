@@ -7280,7 +7280,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: docker.io/bonavadeur/seika:v1.1
+        image: docker.io/bonavadeur/seika:v1.2
         livenessProbe:
           httpGet:
             path: /healthz

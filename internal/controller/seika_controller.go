@@ -22,6 +22,7 @@ import (
 	"math"
 	"math/rand"
 	"slices"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	types "k8s.io/apimachinery/pkg/types"
@@ -100,7 +101,7 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	for node, size := range repurika {
 		countDiff := int(math.Abs(float64(podCount[node] - int(size))))
 		if podCount[node] < size {
-			bonalib.Log("need to create more pod in", node)
+			bonalib.Log("need to create", countDiff, "pods in", node)
 			for i := 0; i < countDiff; i++ {
 				pod, err := r.createPodTemplate(seika, node)
 				if err != nil {
@@ -116,9 +117,8 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 					return ctrl.Result{}, nil
 				}
 			}
-			return ctrl.Result{Requeue: true}, nil
 		} else if podCount[node] > size {
-			bonalib.Log("need to delete less pod in", node)
+			bonalib.Log("need to delete", countDiff, "pods in", node)
 			for i := 0; i < countDiff; i++ {
 				pod := &corev1.Pod{}
 				podTobeDeletedName := podNames[node][i]
@@ -135,9 +135,9 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 					return ctrl.Result{}, err
 				}
 			}
-			return ctrl.Result{Requeue: true}, nil
 		}
 	}
+	time.Sleep(1 * time.Second)
 
 	seika.Status.Repurika = seika.Spec.Repurika
 	if err := r.Status().Update(ctx, seika); err != nil {
@@ -145,7 +145,7 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 }
 
 func generatePodName() string {
