@@ -92,9 +92,35 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			bonalib.Warn("Failed to list pods on node", node.Name, err)
 			return ctrl.Result{}, err
 		}
-		podCount[node.Name] = len(podList.Items)
+		podCount[node.Name] = 0
 		for _, pod := range podList.Items {
-			podNames[node.Name] = append(podNames[node.Name], pod.Name)
+
+			// check if pod condition is ready
+			podConditionReady := false
+			for _, condition := range pod.Status.Conditions {
+				if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+					podConditionReady = true
+				}
+			}
+
+			// check if pod is ready
+			podReady := false
+			if pod.DeletionTimestamp != nil { // pod.DeletionTimestamp != nil means Pod is being terminated
+				podReady = false
+			} else {
+				if pod.Status.Phase == corev1.PodRunning {
+					podReady = true
+				}
+				if pod.Status.Phase == corev1.PodPending && !podConditionReady {
+					podReady = true
+				}
+			}
+
+			// count pods
+			if podReady {
+				podCount[node.Name]++
+				podNames[node.Name] = append(podNames[node.Name], pod.Name)
+			}
 		}
 	}
 	bonalib.Succ("Reconcile", seika.Name, podCount)
