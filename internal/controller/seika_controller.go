@@ -276,7 +276,28 @@ func (r *SeikaReconciler) updateStatusReady(
 			return false
 		}
 		for _, pod := range podList.Items {
-			if pod.Status.Phase == corev1.PodRunning {
+			// check if pod condition is ready
+			podConditionReady := false
+			for _, condition := range pod.Status.Conditions {
+				if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+					podConditionReady = true
+				}
+			}
+
+			// check if pod is ready
+			podReady := false
+			if pod.DeletionTimestamp != nil { // pod.DeletionTimestamp != nil means Pod is being terminated
+				podReady = false
+			} else {
+				if pod.Status.Phase == corev1.PodRunning {
+					podReady = true
+				}
+				if pod.Status.Phase == corev1.PodPending && !podConditionReady {
+					podReady = false
+				}
+			}
+
+			if podReady {
 				runningPodCount[node.Name]++
 			}
 		}

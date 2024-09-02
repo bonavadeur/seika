@@ -68,9 +68,98 @@ seika-sample-node2-qkp5u       1/1     Running   0               16m    10.233.7
 seika-sample-node3-7qf9g       1/1     Running   0               8s     10.233.71.45     node3   <none>           <none>
 seika-sample-node3-efl0y       1/1     Running   0               9s     10.233.71.49     node3   <none>           <none>
 seika-sample-node3-q8i96       1/1     Running   0               16m    10.233.71.43     node3   <none>           <none>
+$ kubectl get seika
+NAME           NODES                       READY
+seika-sample   ["node1","node2","node3"]   1-2-3/1-2-3
 ```
 
-## 4. Contributeur
+## 4. For Development
+
+### 4.1. Build and Run commands
+
+```bash
+# install CRD to Kubernetes
+$ make install
+$ make uninstall
+# run Seika controller locally
+$ make run
+# build Docker image and push to DockerHub
+$ make docker-build docker-push IMG=docker.io/bonavadeur/seika:v1.2
+# deploy and undeploy
+$ make deploy IMG=docker.io/bonavadeur/seika:v1.2
+$ make undeploy
+# regenerate manifest whenever you make a change to api/v1/seika_types.go
+$ make generate IMG=docker.io/bonavadeur/seika:v1.2
+$ make manifests IMG=docker.io/bonavadeur/seika:v1.2
+# build install.yaml file
+$ make build-installer IMG=docker.io/bonavadeur/seika:v1.2
+```
+
+### 4.2. Edit Seika using kubectl patch
+
+```bash
+$ kubectl patch seika seika-sample --type=merge --patch '{"spec":{"repurika":{"node1":1,"node2":2,"node3":1}}}'
+```
+
+### 4.3. Edit Seika using client-go library
+
+```go
+import (
+  "encoding/json"
+  "fmt"
+  "context"
+
+  "k8s.io/apimachinery/pkg/runtime/schema"
+  metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+  "k8s.io/apimachinery/pkg/types"
+  "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+)
+
+func patchSeika(desiredPods map[string]int32) {
+	gvr := schema.GroupVersionResource{
+		Group:    "batch.bonavadeur.io",
+		Version:  "v1",
+		Resource: "seikas",
+	}
+
+	// Define the patch data
+	repurika := map[string]interface{}{}
+	for _, nodename := range NODENAMES {
+		repurika[nodename] = desiredPods[nodename]
+	}
+	patchData := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"repurika": repurika,
+		},
+	}
+
+	// Convert patch data to JSON
+	patchBytes, err := json.Marshal(patchData)
+	if err != nil {
+		fmt.Printf("Error marshalling patch data: %v", err)
+	}
+
+	// Namespace and resource name
+	namespace := "default"
+	resourceName := "seika-sample"
+
+	// Execute the patch request
+	patchedResource, err := DYNCLIENT.Resource(gvr).
+		Namespace(namespace).
+		Patch(context.TODO(), resourceName, types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	if err != nil {
+		fmt.Errorf("Error patching resource: ", err)
+	} else {
+		resource, found, _ := unstructured.NestedString(patchedResource.Object, "metadata", "name")
+		if !found {
+			fmt.Errorf("Seika not found:", err)
+		}
+		fmt.Println("Patched resource:", resource)
+	}
+}
+```
+
+## 5. Contributeur
 
 Đào Hiệp - Bonavadeur - ボナちゃん  
 The Future Internet Laboratory, Room E711 C7 Building, Hanoi University of Science and Technology, Vietnam.
