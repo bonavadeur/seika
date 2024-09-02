@@ -22,6 +22,8 @@ import (
 	"math"
 	"math/rand"
 	"slices"
+	"sort"
+	"strconv"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -97,8 +99,7 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 	bonalib.Succ("Reconcile", seika.Name, podCount)
 
-	repurika := seika.Spec.Repurika
-	for node, size := range repurika {
+	for node, size := range seika.Spec.Repurika {
 		countDiff := int(math.Abs(float64(podCount[node] - int(size))))
 		if podCount[node] < size {
 			bonalib.Log("need to create", countDiff, "pods in", node)
@@ -139,13 +140,19 @@ func (r *SeikaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 	time.Sleep(1 * time.Second)
 
+	// update Seika's status
 	seika.Status.Repurika = seika.Spec.Repurika
+	seika.Status.Nodes = sortNodenames(nodeList)
+	ready := r.updateStatusReady(ctx, seika, nodeList)
 	if err := r.Status().Update(ctx, seika); err != nil {
-		bonalib.Warn("Failed to update Repurika status", err)
+		// bonalib.Warn("Failed to update Repurika status", err)
 		return ctrl.Result{}, err
 	}
-
-	return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
+	if ready {
+		return ctrl.Result{}, nil
+	} else {
+		return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
+	}
 }
 
 func generatePodName() string {
@@ -207,6 +214,65 @@ func checkNodeRepurika(repurika map[string]int, nodes []corev1.Node) {
 			bonalib.Warn("Node not found: ", node)
 			return
 		}
+	}
+}
+
+func sortNodenames(nodeList *corev1.NodeList) []string {
+	ret := []string{}
+	for _, node := range nodeList.Items {
+		ret = append(ret, node.Name)
+	}
+	sort.Strings(ret)
+	return ret
+}
+
+func (r *SeikaReconciler) updateStatusReady(
+	ctx context.Context,
+	seika *batchv1.Seika,
+	nodeList *corev1.NodeList,
+) bool {
+	// init
+	seika.Status.Ready = ""
+	status := ""
+	desired := ""
+
+	// list running pods
+	runningPodCount := map[string]int{}
+	for _, node := range nodeList.Items {
+		podList := &corev1.PodList{}
+		listOpts := []client.ListOption{
+			client.InNamespace(seika.Namespace),
+			client.MatchingLabels(seika.Spec.Selector.MatchLabels),
+			client.MatchingFields{"spec.nodeName": node.Name},
+		}
+		if err := r.List(ctx, podList, listOpts...); err != nil {
+			bonalib.Warn("Failed to list pods on node", node.Name, err)
+			return false
+		}
+		for _, pod := range podList.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				runningPodCount[node.Name]++
+			}
+		}
+	}
+
+	for _, nodename := range seika.Status.Nodes {
+		if status == "" {
+			status += strconv.Itoa(runningPodCount[nodename])
+		} else {
+			status += "-" + strconv.Itoa(runningPodCount[nodename])
+		}
+		if desired == "" {
+			desired += strconv.Itoa(seika.Spec.Repurika[nodename])
+		} else {
+			desired += "-" + strconv.Itoa(seika.Spec.Repurika[nodename])
+		}
+	}
+	seika.Status.Ready = status + "/" + desired
+	if status != desired {
+		return false
+	} else {
+		return true
 	}
 }
 

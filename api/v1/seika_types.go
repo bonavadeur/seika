@@ -44,11 +44,16 @@ type SeikaStatus struct {
 	Repurika map[string]int `json:"repurika,omitempty"`
 
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+
+	Nodes []string `json:"nodes,omitempty"`
+
+	Ready string `json:"ready,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Nodes",type=string,JSONPath=`.status.nodes`
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.ready`
 // Seika is the Schema for the seikas API
 type Seika struct {
 	metav1.TypeMeta   `json:",inline"`

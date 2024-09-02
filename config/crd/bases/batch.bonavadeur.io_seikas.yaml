@@ -14,7 +14,14 @@ spec:
     singular: seika
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.nodes
+      name: Nodes
+      type: string
+    - jsonPath: .status.ready
+      name: Ready
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         properties:
@@ -3472,6 +3479,12 @@ spec:
                   - type
                   type: object
                 type: array
+              nodes:
+                items:
+                  type: string
+                type: array
+              ready:
+                type: string
               repurika:
                 additionalProperties:
                   type: integer
