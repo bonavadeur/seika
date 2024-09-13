@@ -13,7 +13,11 @@ Kubernetes Custom Resource maintains quantity of Pods in each Node
 
 Seika is a Kubernetes Custom Resource maintains quantity of Pods in each Node without creating many ReplicaSet or Deployment.
 
-This document is for **use purpose** only. All you need is in `dist/`
+The name `Seika` is inspired by the character `Ijichi Seika` from the anime `Bocchi the rock`.
+
+For **use purpose** only, all you need is in `dist/`
+
+Seika is trusted and being deployed in the [ikukantai Fleet](https://github.com/bonavadeur/ikukantai)
 
 ## 2. Install
 
@@ -162,7 +166,7 @@ func patchSeika(desiredPods map[string]int32) {
 ## 5. Contributeur
 
 Đào Hiệp - Bonavadeur - ボナちゃん  
-The Future Internet Laboratory, Room E711 C7 Building, Hanoi University of Science and Technology, Vietnam.
+The Future Internet Laboratory, Room E711 C7 Building, Hanoi University of Science and Technology, Vietnam.  
 未来のインターネット研究室, C7 の E ７１１、ハノイ百科大学、ベトナム。  
 
 ![](images/github-wp.png)
